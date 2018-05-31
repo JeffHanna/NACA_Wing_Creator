@@ -2,84 +2,99 @@
 https://en.wikipedia.org/wiki/NACA_airfoil#Equation_for_a_cambered_4-digit_NACA_airfoil
 '''
 
-#import math
-import matplotlib.pyplot
 import numpy
 
 
 class NACA_4( ):
 	'''
 	Testing NACA number = 2412
+	TODO: Need to actually parse the incoming naca_number
+	TODO: Should the class create the points at init or on demand? Maybe a generator?
 	'''
 
-	def __init__( naca_number, num_points ):
+	def __init__( self, naca_number, num_points ):
 		self._naca_number = int( naca_number )
 		assert 0 <= self._naca_number <= 9999
 
 		self._m = 0.02
 		self._p = 0.4
 		self._t = 0.12
-		self._cc = 1.0
-
+		self._c = 1.0
 		self._x = numpy.linspace( 0, 1, num_points )
 
-		
-	def camber_line( x, m, p, c ):
+
+	@property
+	def camber_line( self ):
+		'''Getter for the points that define the mean camber line of the airfoil this class represents.'''
+		return self._camber_line( )
+
+	@property
+	def points( self ):
+		'''Getter for the points that define the airfoil this class represents.'''
+		return self._calculate_points( )
+
+	@property
+	def x( self ):
+		'''TODO: This needs a more descriptive/verbose name.'''
+		return self._x
+
+
+	def _camber_line( self ):
 		'''
 		'''
 
-		return numpy.where( ( x >= 0 ) & ( x <= c * p ),
-								m * ( x / numpy.power( p, 2 ) ) * ( 2.0 * p - ( x / c ) ),
-								m * ( ( c - x ) / numpy.power( 1 - p, 2 ) ) * ( 1.0 + ( x / c ) - 2.0 * p ) )
+		return numpy.where( ( self._x >= 0 ) & ( self._x <= self._c * self._p ),
+								  self._m * ( self._x / numpy.power( self._p, 2 ) ) * ( 2.0 * self._p - ( self._x / self._c ) ),
+								  self._m * ( ( self._c - self._x ) / numpy.power( 1 - self._p, 2 ) ) * ( 1.0 + ( self._x / self._c ) - 2.0 * self._p ) )
 
-	def dyc_over_dx( x, m, p, c ):
+	def _dyc_over_dx( self ):
 		'''
 		'''
 
-		return numpy.where( ( x >= 0 ) & ( x <= c * p ),
-								2.0 * m / numpy.power( p, 2 ) * ( p - x / c ),
-								2.0 * m / numpy.power( 1 - p, 2 ) * ( p - x / c ) )
+		return numpy.where( ( self._x >= 0 ) & ( self._x <= self._c * self._p ),
+								  2.0 * self._m / numpy.power( self._p, 2 ) * ( self._p - self._x / self._c ),
+								  2.0 * self._m / numpy.power( 1 - self._p, 2 ) * ( self._p - self._x / self._c ) )
 
-	def thickness( x, t, c ):
+	def _thickness( self ):
 		'''
 		'''
 
-		term1 =  0.2969 * numpy.sqrt( x / c )
-		term2 = -0.1260 * x / c
-		term3 = -0.3516 * numpy.power( x / c, 2 )
-		term4 =  0.2843 * numpy.power( x / c, 3 )
-		term5 = -0.1015 * numpy.power( x / c, 4 )
-		return 5 * t * c * ( term1 + term2 + term3 + term4 + term5 )
+		term1 =  0.2969 * numpy.sqrt( self._x / self._c )
+		term2 = -0.1260 * self._x / self._c
+		term3 = -0.3516 * numpy.power( self._x / self._c, 2 )
+		term4 =  0.2843 * numpy.power( self._x / self._c, 3 )
+		term5 = -0.1015 * numpy.power( self._x / self._c, 4 )
+		return 5 * self._t * self._c * ( term1 + term2 + term3 + term4 + term5 )
 
-	def calculate_points( x, m, p, t, c = 1 ):
+
+	def _calculate_points( self ):
 		'''
+		TODO: Should this be a generator?
 		'''
 
-		dyc_dx = dyc_over_dx( x, m, p, c )
+		dyc_dx = self._dyc_over_dx( )
 		th = numpy.arctan( dyc_dx )
-		yt = thickness( x, t, c )
-		yc = camber_line( x, m, p, c )
-		return ( ( x - yt * numpy.sin( th ), yc + yt * numpy.cos( th ) ),
-		( x + yt * numpy.sin( th ), yc - yt * numpy.cos( th ) ) )
+		yt = self._thickness( )
+		yc = self._camber_line( )
 
+		x_pos = ( self._x - yt * numpy.sin( th ), yc + yt * numpy.cos( th ) )
+		y_pos = ( self._x + yt * numpy.sin( th ), yc - yt * numpy.cos( th ) )
+		return ( x_pos, y_pos )
 
-	def plot airfoil( self ):
-		for item in self.calculate_points( x, m, p, t, c ):
-			matplotlib.pyplot.plot( item[ 0 ], item[ 1 ], 'b' )
-
-		matplotlib.pyplot.plot( x, camber_line( x, m, p, c ), 'r' )
-		matplotlib.pyplot.axis( 'equal' )
-		matplotlib.pyplot.xlim( ( -0.05, 1.05 ) )
-		matplotlib.pyplot.show( )
 
 
 if __name__ == '__main__':
-	#naca2412 
-	
-
 	naca_4 = NACA_4( "0018", 200 )
 
-	# half-cosine spacing.
-	#x = numpy.array( [ 1 - ( numpy.cos( math.pi * 0.5 * math.degrees( x ) ) ) for x in x ] )
+	# TESTING PLOT
+	# Yes, it is bad form putting an import here instead of at the top of the file.
+	# matplotlib should only be imported if this module is used as a library, not as a self-running script.
+	import matplotlib.pyplot	
+	for item in naca_4.points:
+			matplotlib.pyplot.plot( item[ 0 ], item[ 1 ], 'b' )
 
-	
+	matplotlib.pyplot.plot( naca_4.x, naca_4.camber_line, 'r' )
+	matplotlib.pyplot.axis( 'equal' )
+	matplotlib.pyplot.xlim( ( -0.05, 1.05 ) )
+	matplotlib.pyplot.show( )
+
