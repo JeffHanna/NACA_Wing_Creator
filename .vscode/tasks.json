@@ -8,7 +8,7 @@
             "type": "shell",
             "command": "D:/Repos/MXSPyCOM/bin/release/MXSPyCOM.exe",
             "args": [
-                "-s", 
+                "-s",
                 "${file}"
             ],
             "presentation": {
