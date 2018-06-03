@@ -7,8 +7,6 @@ import numpy
 
 class NACA_4( ):
 	'''
-	Testing NACA number = 2412
-	TODO: Need to actually parse the incoming naca_number
 	TODO: Should the class create the points at init or on demand? Maybe a generator?
 	'''
 
@@ -16,9 +14,9 @@ class NACA_4( ):
 		self._naca_number = int( naca_number )
 		assert 0 <= self._naca_number <= 9999
 
-		self._m = 0.02
-		self._p = 0.4
-		self._t = 0.12
+		self._m = ( self._naca_number - self._naca_number % 1e3 ) / 1e5
+		self._p = ( self._naca_number % 1e3 - self._naca_number % 1e2 ) / 1e3
+		self._t = self._naca_number % 1e2 / 1e2
 		self._c = 1.0
 		self._x = numpy.linspace( 0, 1, num_points )
 
@@ -86,15 +84,17 @@ class NACA_4( ):
 if __name__ == '__main__':
 	naca_4 = NACA_4( "0018", 200 )
 
-	# TESTING PLOT
-	# Yes, it is bad form putting an import here instead of at the top of the file.
-	# matplotlib should only be imported if this module is used as a library, not as a self-running script.
+	'''
+	TESTING PLOT
+	Yes, it is bad form putting an import here instead of at the top of the file.
+	matplotlib should only be imported if this module is used as a library, not as a self-running script.
+	'''
+
 	import matplotlib.pyplot	
 	for item in naca_4.points:
-			matplotlib.pyplot.plot( item[ 0 ], item[ 1 ], 'b' )
+		matplotlib.pyplot.plot( item[ 0 ], item[ 1 ], 'b' )
 
 	matplotlib.pyplot.plot( naca_4.x, naca_4.camber_line, 'r' )
 	matplotlib.pyplot.axis( 'equal' )
 	matplotlib.pyplot.xlim( ( -0.05, 1.05 ) )
 	matplotlib.pyplot.show( )
-
