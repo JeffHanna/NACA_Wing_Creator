@@ -21,14 +21,6 @@ class NACA_4( ):
 		self._x = self._cosspace( 0, 1, num_points ) if cosine_spacing else numpy.linspace( 0, 1, num_points )		
 		self._x_over_c = self._x / self._c
 
-		'''
-		# TODO: half-cosine spacing?		
-		self._cos_points = [ ]
-		for b in self._x:
-			self._cos_points.append( 1 - ( math.cos( math.pi * 0.5 * ( math.degrees( b ) ) ) ) )
-		self._x = numpy.array( self._cos_points )
-		'''
-
 
 	@property
 	def camber_line( self ):
