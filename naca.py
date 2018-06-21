@@ -10,15 +10,24 @@ class NACA_4( ):
 	TODO: Should the class create the points at init or on demand? Maybe a generator?
 	'''
 
-	def __init__( self, naca_number, num_points ):
+	def __init__( self, naca_number, num_points, cosine_spacing = True ):
 		self._naca_number = int( naca_number )
 		assert 0 <= self._naca_number <= 9999
 
 		self._m = ( self._naca_number - self._naca_number % 1e3 ) / 1e5
 		self._p = ( self._naca_number % 1e3 - self._naca_number % 1e2 ) / 1e3
 		self._t = self._naca_number % 1e2 / 1e2
-		self._c = 1.0
-		self._x = numpy.linspace( 0, 1, num_points )
+		self._c = 1.0		
+		self._x = self._cosspace( 0, 1, num_points ) if cosine_spacing else numpy.linspace( 0, 1, num_points )		
+		self._x_over_c = self._x / self._c
+
+		'''
+		# TODO: half-cosine spacing?		
+		self._cos_points = [ ]
+		for b in self._x:
+			self._cos_points.append( 1 - ( math.cos( math.pi * 0.5 * ( math.degrees( b ) ) ) ) )
+		self._x = numpy.array( self._cos_points )
+		'''
 
 
 	@property
@@ -42,26 +51,38 @@ class NACA_4( ):
 		'''
 
 		return numpy.where( ( self._x >= 0 ) & ( self._x <= self._c * self._p ),
-								  self._m * ( self._x / numpy.power( self._p, 2 ) ) * ( 2.0 * self._p - ( self._x / self._c ) ),
-								  self._m * ( ( self._c - self._x ) / numpy.power( 1 - self._p, 2 ) ) * ( 1.0 + ( self._x / self._c ) - 2.0 * self._p ) )
+								  self._m * ( self._x / numpy.power( self._p, 2 ) ) * ( 2.0 * self._p - self._x_over_c ),
+								  self._m * ( ( self._c - self._x ) / numpy.power( 1 - self._p, 2 ) ) * ( 1.0 + self._x_over_c - 2.0 * self._p ) )
+
+
+	def _cosspace( self, start, stop, max_points ):
+		'''
+		'''
+
+		linspace_vals = numpy.linspace( start, stop, max_points )
+		vals = [ numpy.pi * 0.5 * x for x in linspace_vals ]
+		cosspace_vals = numpy.array( [ 1 - x for x in numpy.cos( vals ) ] )
+
+		return cosspace_vals
+
 
 	def _dyc_over_dx( self ):
 		'''
 		'''
 
 		return numpy.where( ( self._x >= 0 ) & ( self._x <= self._c * self._p ),
-								  2.0 * self._m / numpy.power( self._p, 2 ) * ( self._p - self._x / self._c ),
-								  2.0 * self._m / numpy.power( 1 - self._p, 2 ) * ( self._p - self._x / self._c ) )
+								  2.0 * self._m / numpy.power( self._p, 2 ) * ( self._p - self._x_over_c ),
+								  2.0 * self._m / numpy.power( 1 - self._p, 2 ) * ( self._p - self._x_over_c ) )
 
 	def _thickness( self ):
 		'''
 		'''
 
-		term1 =  0.2969 * numpy.sqrt( self._x / self._c )
-		term2 = -0.1260 * self._x / self._c
-		term3 = -0.3516 * numpy.power( self._x / self._c, 2 )
-		term4 =  0.2843 * numpy.power( self._x / self._c, 3 )
-		term5 = -0.1015 * numpy.power( self._x / self._c, 4 )
+		term1 =  0.2969 * numpy.sqrt( self._x_over_c )
+		term2 = -0.1260 * self._x_over_c
+		term3 = -0.3516 * numpy.power( self._x_over_c, 2 )
+		term4 =  0.2843 * numpy.power( self._x_over_c, 3 )
+		term5 = -0.1015 * numpy.power( self._x_over_c, 4 )
 		return 5 * self._t * self._c * ( term1 + term2 + term3 + term4 + term5 )
 
 
