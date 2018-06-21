@@ -51,8 +51,7 @@ class NACA_4( ):
 		'''
 		'''
 
-		linspace_vals = numpy.linspace( start, stop, max_points )
-		vals = [ numpy.pi * 0.5 * x for x in linspace_vals ]
+		vals = [ numpy.pi * 0.5 * x for x in numpy.linspace( start, stop, max_points ) ]
 		cosspace_vals = numpy.array( [ 1 - x for x in numpy.cos( vals ) ] )
 
 		return cosspace_vals
