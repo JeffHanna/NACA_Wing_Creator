@@ -2,5 +2,7 @@
     "editor.tabSize":3,
     "editor.insertSpaces": false,
     "editor.wordWrap": "wordWrapColumn",
-    "editor.wordWrapColumn": 150
+    "editor.wordWrapColumn": 150,
+    "python.pythonPath": "env\\Scripts\\python.exe",
+    "python.linting.pylintEnabled": true
 }
