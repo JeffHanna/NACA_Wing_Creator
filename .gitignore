@@ -1,2 +1,7 @@
-NACA_Wing_Creator.code-workspace
-settings.json
+*.pyc
+.mypy_cache
+.vs/
+.vscode/.ropeproject/
+.vscode/tags
+__pycache__/
+env/

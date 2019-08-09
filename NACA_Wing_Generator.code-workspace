@@ -1,0 +1,29 @@
+{
+	"folders": [
+		{
+			"path": "."
+		}
+	],
+	"settings": {
+		"editor.insertSpaces": false,
+		"editor.wordWrapColumn": 150,
+		"editor.tabSize": 3,
+		"editor.trimAutoWhitespace": true,
+		"files.exclude": {
+			"**/__pycache__/**": true,
+			"**/*.code-workspace/**": true,
+			"**/.vscode/**": true,
+			"**/api_token.txt/**": true,
+		},
+		"files.trimTrailingWhitespace": true,
+		"python.linting.enabled": true,
+		"python.linting.lintOnSave": true,
+		"python.pythonPath": "env\\Scripts\\python.exe",
+	},
+	"extensions": {
+		"recommendations": [
+			"ms-python.python",
+			"eamodio.gitlens",
+		]
+	},
+}
