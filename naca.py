@@ -1,11 +1,10 @@
-'''
-TODO: If this is to work inside of 3ds Max then it CANNOT use Numpy.
-'''
+#%% Testing NACA 4
 
-try:
-	import numpy
-except ImportError:
-	raise ImportError( 'The NACA airfoil generation library requires the NumPy Python module.' )
+from collections import namedtuple
+import matplotlib.pyplot # FOR TESTING ONLY. TO BE REMOVED WHEN THIS LIBRARY GOES INTO PRODUCTION.
+import numpy
+
+Mean_Line_Data = namedtuple( 'Mean_Line_Data', [ 'm', 'k1' ] )
 
 
 class NACA_4( ):
@@ -14,7 +13,7 @@ class NACA_4( ):
 	http://airfoiltools.com/airfoil/naca4digit
 	"""
 
-	def __init__( self, naca_number, num_points, cosine_spacing=True ):
+	def __init__( self, naca_number, num_points = 200, cosine_spacing=True ):
 		self._naca_number = int( naca_number )
 		assert 0 <= self._naca_number <= 9999
 
@@ -29,6 +28,10 @@ class NACA_4( ):
 	def camber_line( self ):
 		'''Getter for the points that define the mean camber line of the airfoil this class represents.'''
 		return self._camber_line( )
+
+	@property
+	def naca_number( self ):
+		return self._naca_number
 
 	@property
 	def points( self ):
@@ -56,12 +59,7 @@ class NACA_4( ):
 		'''
 
 		dyc_dx = self._dyc_over_dx( )
-
-		# I don't know what Pylint is on about. numpy.arctan does return a value - an ndarray or a scalar.
-		# Disabling Pylint's "Assigning result of a function call, where the function has no return" error as it is a false positive.
-		# pylint: disable = E1111
 		th = numpy.arctan( dyc_dx )
-		# pylint: enable = E1111
 
 		yt = self._thickness( )
 		yc = self._camber_line( )
@@ -120,25 +118,30 @@ class NACA_5( ):
 	http://airfoiltools.com/airfoil/naca5digit
 	"""
 
-	def __init__( self, naca_number, num_points, cosine_spacing=True ):
+	def __init__( self, naca_number, num_points = 200, cosine_spacing=True ):
 		self._naca_number = int( naca_number )
 		assert 0 <= self._naca_number <= 99999
 
-		self._l = self._naca_number // 10**4 % 10
-		assert 0.05 <= ( self._l * 3 / 20 ), 'The design coefficient of lift is too small. Minimum is 0.05'
-		assert ( self._l * 3 / 20 ) <= 1.0, 'The design coefficient of list is too large. Maximum is 1.0'
+		self._mean_line_map = { 0.05 : Mean_Line_Data( m = 0.0580, k1 = 361.400 ),
+										0.10 : Mean_Line_Data( m = 0.1260, k1 = 51.640 ),
+										0.15 : Mean_Line_Data( m = 0.2025, k1 = 15.957 ),
+										0.20 : Mean_Line_Data( m = 0.2900, k1 = 6.643 ),
+										0.25 : Mean_Line_Data( m = 0.3910, k1 = 3.230 ), }
 
-		self._p = self._naca_number // 10**3 % 10
-
-		self._s = self._naca_number // 10**2 % 10
-		assert self._s in [ 0, 1 ], 'The 3rd term in a NACA 5 series number must be a 0 or a 1.' # The S term is a 0 or 1 boolean indicator of camber type.
-
+		self._cl = int( str( naca_number )[ 0 ] ) * 3 / 2 / 10
+		self._p = int( str( naca_number ) [ 1 : 3 ] ) / 2 / 100
+		self._t = int( str( naca_number ) [ 3 : 5 ] )
+		self._m, self._k1 = self._mean_line_map.get( self._p )
 
 
 	@property
 	def camber_line( self ):
 		'''Getter for the points that define the mean camber line of the airfoil this class represents.'''
 		return self._camber_line( )
+
+	@property
+	def naca_number( self ):
+		return self._naca_number
 
 	@property
 	def points( self ):
@@ -155,24 +158,17 @@ class NACA_5( ):
 
 
 
-if __name__ == '__main__':
-	'''
-	TESTING PLOT
-	Yes, it is bad form putting an import here instead of at the top of the file.
-	matplotlib should only be imported if this module is used as a self running file, not a module
-	'''
+# naca_4 = NACA_4( '0018' )
+# for point in naca_4.points:
+# 	matplotlib.pyplot.plot( point[ 0 ], point[ 1 ], 'b' )
 
-	try:
-		import matplotlib.pyplot
-	except ImportError:
-		raise ImportError( 'The Matplotlib Python module is required to test this module.' )
+# matplotlib.pyplot.plot( naca_4.x, naca_4.camber_line, 'r' )
+# matplotlib.pyplot.axis( 'equal' )
+# matplotlib.pyplot.xlim( ( -0.05, 1.05 ) )
+# matplotlib.pyplot.show( )
 
-	for airfoil in [ NACA_4( '0018', 200 ), NACA_5( 22112, 200 ) ]:
-		for item in airfoil.points:
-			matplotlib.pyplot.plot( item[ 0 ], item[ 1 ], 'b' )
 
-		matplotlib.pyplot.plot(	airfoil.x, airfoil.camber_line, 'r' )
-		matplotlib.pyplot.title( 'NACA Airfoil' )
-		matplotlib.pyplot.axis( 'equal' )
-		matplotlib.pyplot.xlim( ( -0.05, 1.05 ) )
-		matplotlib.pyplot.show( )
+naca_5 = NACA_5( 23012 )
+
+
+#%%
