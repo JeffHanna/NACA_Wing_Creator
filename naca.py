@@ -16,12 +16,12 @@ class NACA_Base( abc.ABC ):
 	"""
 	[summary]
 
-	Raises:
-		 NotImplementedError: [description]
-		 NotImplementedError: [description]
+	Arguments:
+		naca_number {str} -- [description]
 
-	Returns:
-		 [type] -- [description]
+	Keyword Arguments:
+		num_points {int} -- [description]
+		cosine_spacing {bool} -- [description]
 	"""
 
 	def __init__( self, naca_number, num_points = 200, cosine_spacing = True ):
@@ -74,9 +74,6 @@ class NACA_Base( abc.ABC ):
 	def _calculate_points( self ):
 		"""
 		[summary]
-
-		Raises:
-			 NotImplementedError: [description]
 		"""
 
 		pass
@@ -86,9 +83,6 @@ class NACA_Base( abc.ABC ):
 	def _mean_camber_line( self ):
 		"""
 		[summary]
-
-		Raises:
-			 NotImplementedError: [description]
 		"""
 
 		pass
@@ -101,10 +95,11 @@ class NACA_4( NACA_Base ):
 	http://airfoiltools.com/airfoil/naca4digit
 
 	Arguments:
-		 NACA_Base {[type]} -- [description]
+		naca_number {str} -- [description]
 
-	Returns:
-		 [type] -- [description]
+	Keyword Arguments:
+		num_points {int} -- [description]
+		cosine_spacing {bool} -- [description]
 	"""
 
 	def __init__( self, naca_number, num_points = 200, cosine_spacing = True ):
@@ -196,10 +191,11 @@ class NACA_5( NACA_Base ):
 	http://airfoiltools.com/airfoil/naca5digit
 
 	Arguments:
-		 NACA_Base {[type]} -- [description]
+		naca_number {str} -- [description]
 
-	Returns:
-		 [type] -- [description]
+	Keyword Arguments:
+		num_points {int} -- [description]
+		cosine_spacing {bool} -- [description]
 	"""
 
 	def __init__( self, naca_number, num_points = 200, cosine_spacing = True ):
