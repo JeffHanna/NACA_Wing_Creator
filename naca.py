@@ -28,7 +28,7 @@ class NACA_Base( abc.ABC ):
 		self._naca_number = int( naca_number )
 		assert 0 <= self._naca_number <= 99999
 
-		self._x = self._cosspace( 0, 1, num_points ) if cosine_spacing else numpy.linspace( 0, 1, num_points )
+		self._x_points = self._cosspace( 0, 1, num_points ) if cosine_spacing else numpy.linspace( 0, 1, num_points )
 
 
 	@property
@@ -47,9 +47,9 @@ class NACA_Base( abc.ABC ):
 		return self._calculate_points( )
 
 	@property
-	def x( self ):
-		'''TODO: This needs a more descriptive/verbose name.'''
-		return self._x
+	def x_points( self ):
+		'''Getter for the x axis points calculated along the mean camber line.'''
+		return self._x_points
 
 	@staticmethod
 	def _cosspace( start, stop, max_points ):
@@ -114,7 +114,7 @@ class NACA_4( NACA_Base ):
 		self._p = ( self._naca_number % 1e3 - self._naca_number % 1e2 ) / 1e3
 		self._t = self._naca_number % 1e2 / 1e2
 		self._m = ( self._naca_number - self._naca_number % 1e3 ) / 1e5
-		self._x_over_c = self._x / self._cl
+		self._x_over_c = self._x_points / self._cl
 
 
 	def _mean_camber_line( self ):
@@ -125,9 +125,9 @@ class NACA_4( NACA_Base ):
 			 [type] -- [description]
 		"""
 
-		return numpy.where( ( self._x >= 0 ) & ( self._x <= self._cl * self._p ),
-									 self._m * ( self._x / numpy.power( self._p, 2 ) ) * ( 2.0 * self._p - self._x_over_c ),
-									 self._m * ( ( self._cl - self._x ) / numpy.power( 1 - self._p, 2 ) ) * ( 1.0 + self._x_over_c - 2.0 * self._p ) )
+		return numpy.where( ( self._x_points >= 0 ) & ( self._x_points <= self._cl * self._p ),
+									 self._m * ( self._x_points / numpy.power( self._p, 2 ) ) * ( 2.0 * self._p - self._x_over_c ),
+									 self._m * ( ( self._cl - self._x_points ) / numpy.power( 1 - self._p, 2 ) ) * ( 1.0 + self._x_over_c - 2.0 * self._p ) )
 
 
 	def _calculate_points( self ):
@@ -144,8 +144,8 @@ class NACA_4( NACA_Base ):
 		yt = self._thickness( )
 		yc = self._mean_camber_line( )
 
-		x_pos = ( self._x - yt * numpy.sin( th ), yc + yt * numpy.cos( th ) )
-		y_pos = ( self._x + yt * numpy.sin( th ), yc - yt * numpy.cos( th ) )
+		x_pos = ( self._x_points - yt * numpy.sin( th ), yc + yt * numpy.cos( th ) )
+		y_pos = ( self._x_points + yt * numpy.sin( th ), yc - yt * numpy.cos( th ) )
 		return ( x_pos, y_pos )
 
 
@@ -157,7 +157,7 @@ class NACA_4( NACA_Base ):
 			 [type] -- [description]
 		"""
 
-		return numpy.where( ( self._x >= 0 ) & ( self._x <= self._cl * self._p ),
+		return numpy.where( ( self._x_points >= 0 ) & ( self._x_points <= self._cl * self._p ),
 									 2.0 * self._m / numpy.power( self._p, 2 ) * ( self._p - self._x_over_c ),
 									 2.0 * self._m / numpy.power( 1 - self._p, 2 ) * ( self._p - self._x_over_c ) )
 
@@ -232,12 +232,12 @@ class NACA_5( NACA_Base ):
 
 		pairs = [ ]
 
-		for x in self._x:
+		for x in self._x_points:
 			if x >= 0 and x <= self._m:
-				yc = self._k1 / 6 * ( x**3 - ( 3 * self._m * x**2 ) + ( self._m**2 * ( 3 - self._m ) * x ) )
+				yc = self._k1 / 6 * ( numpy.power( x, 3 ) - ( 3 * self._m * numpy.power( x, 2 ) ) + ( numpy.power( self._m, 2 ) * ( 3 - self._m ) * x ) )
 
 			else:
-				yc = self._k1 * self._m**3 / 6 * ( 1 - x )
+				yc = self._k1 * numpy.power( self._m, 3 ) / 6 * ( 1 - x )
 
 			pairs.append( ( x, yc ) )
 
@@ -250,7 +250,7 @@ if __name__ == '__main__':
 	for point in naca_4.points:
 		matplotlib.pyplot.plot( point[ 0 ], point[ 1 ], 'b' )
 
-	matplotlib.pyplot.plot( naca_4.x, naca_4.mean_camber_line, 'r' )
+	matplotlib.pyplot.plot( naca_4.x_points, naca_4.mean_camber_line, 'r' )
 	matplotlib.pyplot.axis( 'equal' )
 	matplotlib.pyplot.xlim( ( -0.05, 1.05 ) )
 	matplotlib.pyplot.show( )
