@@ -5,10 +5,11 @@
 import abc
 from collections import namedtuple
 import math
-import matplotlib.pyplot # FOR TESTING ONLY. TO BE REMOVED WHEN THIS LIBRARY GOES INTO PRODUCTION.
 import numpy
+from typing import NamedTuple
 
-Mean_Line_Data = namedtuple( 'Mean_Line_Data', [ 'm', 'k1' ] )
+
+Mean_Line_Data = NamedTuple( 'Mean_Line_Data', [ ( 'm', float ), ( 'k1', float ) ] )
 
 
 class NACA_Base( abc.ABC ):
@@ -16,24 +17,20 @@ class NACA_Base( abc.ABC ):
 	[summary]
 
 	Arguments:
-		naca_number {str} -- [description]
+		naca_number {str} -- A string of digits specifing the NACA number of the airfoil cross section to caclulate.
 
 	Keyword Arguments:
-		num_points {int} -- [description]
-		cosine_spacing {bool} -- [description]
+		num_points {int} -- The number of points to calculate on each half (top and bottom) of the wing profile.
+		half_cosine_spacing {bool} -- If true then half-cosine-spacing is used to calculate the distances between x axis points. This packs more points
+												toward the front of the wing profile, to increase fidelity of the leading edge.
 	"""
 
-	def __init__( self, naca_number, num_points = 200, cosine_spacing = True ):
-		self._naca_number = int( naca_number )
+	def __init__( self, naca_number, num_points = 200, half_cosine_spacing = True ):
+		self._naca_number : int = int( naca_number )
 		assert 0 <= self._naca_number <= 99999
 
-		self._x_points = self._cosspace( 0, 1, num_points ) if cosine_spacing else numpy.linspace( 0, 1, num_points )
+		self._x_points = self._half_cosine_spacing( 0, 1, num_points ) if half_cosine_spacing else numpy.linspace( 0, 1, num_points )
 
-
-	@property
-	def mean_camber_line( self ):
-		'''Getter for the points that define the mean camber line of the airfoil this class represents.'''
-		return self._mean_camber_line( )
 
 	@property
 	def naca_number( self ):
@@ -51,7 +48,7 @@ class NACA_Base( abc.ABC ):
 		return self._x_points
 
 	@staticmethod
-	def _cosspace( start, stop, max_points ):
+	def _half_cosine_spacing( start, stop, max_points ):
 		"""
 		[summary]
 
@@ -64,20 +61,13 @@ class NACA_Base( abc.ABC ):
 		"""
 
 		vals = [ numpy.pi * 0.5 * x for x in numpy.linspace( start, stop, max_points ) ]
-		cosspace_vals = numpy.array( [ 1 - x for x in numpy.cos( vals ) ] )
+		x_points = numpy.array( [ 1 - x for x in numpy.cos( vals ) ] )
 
-		return cosspace_vals
+		return x_points
 
 
 	@abc.abstractmethod
 	def _calculate_points( self ):
-		"""
-		[summary]
-		"""
-
-
-	@abc.abstractmethod
-	def _mean_camber_line( self ):
 		"""
 		[summary]
 		"""
@@ -90,21 +80,28 @@ class NACA_4( NACA_Base ):
 	http://airfoiltools.com/airfoil/naca4digit
 
 	Arguments:
-		naca_number {str} -- [description]
+		naca_number {str} -- A four digit string specifing the NACA number of the airfoil cross section to caclulate.
 
 	Keyword Arguments:
-		num_points {int} -- [description]
-		cosine_spacing {bool} -- [description]
+		num_points {int} -- The number of points to calculate on each half (top and bottom) of the wing profile.
+		half_cosine_spacing {bool} -- If true then half-cosine-spacing is used to calculate the distances between x axis points. This packs more points
+												toward the front of the wing profile, to increase fidelity of the leading edge.
 	"""
 
-	def __init__( self, naca_number, num_points = 200, cosine_spacing = True ):
-		super( ).__init__( naca_number, num_points = num_points, cosine_spacing = cosine_spacing )
+	def __init__( self, naca_number, num_points = 200, half_cosine_spacing = True ):
+		super( ).__init__( naca_number, num_points = num_points, half_cosine_spacing = half_cosine_spacing )
 
-		self._cl = 1.0
-		self._p = ( self._naca_number % 1e3 - self._naca_number % 1e2 ) / 1e3
-		self._t = self._naca_number % 1e2 / 1e2
-		self._m = ( self._naca_number - self._naca_number % 1e3 ) / 1e5
-		self._x_over_c = self._x_points / self._cl
+		# Coeficient of lift
+		self._cl : float = 1.0
+
+		# Point of maximum camber
+		self._p : float = ( self._naca_number % 1e3 - self._naca_number % 1e2 ) / 1e3
+
+		# Point of maximum thickness as a percentage along chord length
+		self._t : float = self._naca_number % 1e2 / 1e2
+
+		self._m : float = ( self._naca_number - self._naca_number % 1e3 ) / 1e5
+		self._x_over_c : float = self._x_points / self._cl
 
 
 	def _mean_camber_line( self ):
@@ -187,15 +184,16 @@ class NACA_5( NACA_Base ):
 	http://airfoiltools.com/airfoil/naca5digit
 
 	Arguments:
-		naca_number {str} -- [description]
+		naca_number {str} -- A five digit string specifing the NACA number of the airfoil cross section to caclulate.
 
 	Keyword Arguments:
-		num_points {int} -- [description]
-		cosine_spacing {bool} -- [description]
+		num_points {int} -- The number of points to calculate on each half (top and bottom) of the wing profile.
+		half_cosine_spacing {bool} -- If true then half-cosine-spacing is used to calculate the distances between x axis points. This packs more points
+												toward the front of the wing profile, to increase fidelity of the leading edge.
 	"""
 
-	def __init__( self, naca_number, num_points = 200, cosine_spacing = True ):
-		super( ).__init__( naca_number, num_points = num_points, cosine_spacing = cosine_spacing )
+	def __init__( self, naca_number, num_points = 200, half_cosine_spacing = True ):
+		super( ).__init__( naca_number, num_points = num_points, half_cosine_spacing = half_cosine_spacing )
 
 		self._mean_line_map = { 0.05 : Mean_Line_Data( m = 0.0580, k1 = 361.400 ),
 										0.10 : Mean_Line_Data( m = 0.1260, k1 = 51.640 ),
@@ -206,84 +204,117 @@ class NACA_5( NACA_Base ):
 		self._a = ( 0.2969, -0.1260, -0.3516, 0.2843, -0.1036 )
 
 		# LPSTT
-		# NACA 23112 profile describes an airfoil with design lift coefficient of 0.3 (0.15*2), the point of maximum camber located at 15% chord (5*3)
-		# reflex camber (1), and maximum thickness of 12% of chord length (12).
+		# NACA 23112 profile describes an airfoil with design lift coefficient of 0.3 ( 0.15 * 2 ), the point of maximum camber located at 15%
+		# chord ( 5 * 3 ) reflex camber ( 1 ), and maximum thickness of 12% of chord length ( 12 ).
 
-		# coeficient of lift
-		self._cl = int( str( naca_number )[ 0 ] ) * 3.0 / 2.0 / 10.0 # 0.3
+		# Coeficient of lift
+		self._cl : int = int( str( naca_number )[ 0 ] ) * 3.0 / 2.0 / 10.0
 
-		# point of maximum camber
-		self._p = float( '%.3f' % ( int( str( naca_number ) [ 1 : 3 ] ) / 2.0 / 100.0 ) ) #.155
+		# Point of maximum camber
+		self._p : float = float( '%.3f' % ( int( str( naca_number ) [ 1 : 3 ] ) / 2.0 / 100.0 ) )
 
-		# maximum thickness as percentage along chord length
-		self._t = int( str( naca_number ) [ 3 : 5 ] ) / 100.0 # 0.12
+		# Point of maximum thickness as percentage along chord length
+		self._t : int = int( str( naca_number ) [ 3 : 5 ] ) / 100.0
 
-		self._m, self._k1 = self._mean_line_map.get( self._p ) #.2025, 15.957
-
-
-	def _calculate_points( self ):
-		'''
-		'''
-
-		yt = [ 5 * self._t * ( self._a[ 0 ] * math.sqrt( x ) + self._a[ 1 ] * x +self._a[ 2 ] * math.pow( x, 2 ) + self._a[ 3 ] * math.pow( x, 3 ) + self._a[ 4 ] * pow( x, 4 ) ) for x in self._x_points ]
-
-		xc1 = [x for x in self._x_points if x <= self._p]
-		xc2 = [x for x in self._x_points if x > self._p]
-		xc = xc1 + xc2
-
-		if self._p == 0:
-			xu = self._x_points
-			yu = yt
-
-			xl = self._x_points
-			yl = [ -x for x in yt ]
-
-			zc = [ 0 ] * len( xc )
-		else:
-			yc1 = [ self._k1 / 6.0 * ( math.pow( x, 3) - 3 * self._m * math.pow( x, 2 ) + math.pow( self._m, 2 ) * ( 3 - self._m ) * x ) for x in xc1 ]
-			yc2 = [ self._k1 / 6.0 * math.pow( self._m, 3 ) * ( 1 - x ) for x in xc2 ]
-			zc  = [ self._cl / 0.3 * x for x in yc1 + yc2 ]
-
-			dyc1_dx = [ self._cl / 0.3 * ( 1.0 / 6.0 ) * self._k1 * ( 3 * math.pow( x, 2 ) - 6 * self._m * x + math.pow( self._m, 2) * ( 3 - self._m ) ) for x in xc1 ]
-			dyc2_dx = [ self._cl / 0.3 * ( 1.0 / 6.0 ) * self._k1 * math.pow( self._m, 3 ) ] *len( xc2 )
-
-			dyc_dx = dyc1_dx + dyc2_dx
-			th = [ numpy.arctan( x ) for x in dyc_dx ]
-
-			xu = [ x - y * numpy.sin( z ) for x, y, z in zip( self._x_points, yt, th ) ]
-			yu = [ x + y * numpy.cos( z ) for x, y, z in zip( zc, yt, th ) ]
-
-			xl = [ x + y * numpy.sin( z ) for x, y, z in zip( self._x_points, yt, th ) ]
-			yl = [ x - y * numpy.cos( z ) for x, y, z in zip( zc, yt, th ) ]
-
-
-		X = xu[ ::-1 ] + xl[ 1: ]
-		Z = yu[ ::-1 ] + yl[ 1: ]
-
-		return X, Z
+		self._m, self._k1 = self._mean_line_map.get( self._p )
 
 
 	def _mean_camber_line( self ):
-		pass
+		"""[summary]
+
+		Returns:
+			 [type]: [description]
+		"""
+
+		return numpy.where( ( self._x_points <= self.p ) & ( self._x_points > self._p ), )
 
 
+	def _calculate_points( self ):
+		"""[summary]
 
+		Returns:
+			 [type]: [description]
+		"""
+
+		yt = self._thickness( )
+
+		xc_1 = [ x for x in self._x_points if x <= self._p ]
+		xc_2 = [ x for x in self._x_points if x > self._p ]
+		xc = xc_1 + xc_2
+
+		if self._p == 0:
+			x_upper = self._x_points
+			y_upper = yt
+
+			x_lower = self._x_points
+			y_lower = map( lambda x: x * -1, yt )
+
+			zc = [ 0 ] * len( xc )
+		else:
+			yc_1 = [ self._k1 / 6.0 * ( math.pow( x, 3) - 3 * self._m * math.pow( x, 2 ) + math.pow( self._m, 2 ) * ( 3 - self._m ) * x ) for x in xc_1 ]
+			yc_2 = [ self._k1 / 6.0 * math.pow( self._m, 3 ) * ( 1 - x ) for x in xc_2 ]
+			zc  = [ self._cl / 0.3 * x for x in yc_1 + yc_2 ]
+
+			dyc_dx = self._dyc_over_dx( xc_1, xc_2 )
+			th = [ numpy.arctan( x ) for x in dyc_dx ]
+
+			x_upper = [ x - y * numpy.sin( z ) for x, y, z in zip( self._x_points, yt, th ) ]
+			y_upper = [ x + y * numpy.cos( z ) for x, y, z in zip( zc, yt, th ) ]
+
+			x_lower = [ x + y * numpy.sin( z ) for x, y, z in zip( self._x_points, yt, th ) ]
+			y_lower = [ x - y * numpy.cos( z ) for x, y, z in zip( zc, yt, th ) ]
+
+
+		x_pos = x_upper[ ::-1 ] + x_lower[ 1: ]
+		y_pos = y_upper[ ::-1 ] + y_lower[ 1: ]
+
+		return x_pos, y_pos
+
+
+	def _dyc_over_dx( self, xc_1, xc_2 ):
+		"""[summary]
+
+		Args:
+			 xc_1 ([type]): [description]
+			 xc_2 ([type]): [description]
+
+		Returns:
+			 [type]: [description]
+		"""
+
+		dyc_dx_1 = [ self._cl / 0.3 * ( 1.0 / 6.0 ) * self._k1 * ( 3 * math.pow( x, 2 ) - 6 *
+						 self._m * x + math.pow( self._m, 2) * ( 3 - self._m ) ) for x in xc_1 ]
+		dyc_dx_2 = [ self._cl / 0.3 * ( 1.0 / 6.0 ) * self._k1 * math.pow( self._m, 3 ) ] * len( xc_2 )
+
+		return dyc_dx_1 + dyc_dx_2
+
+
+	def _thickness( self ):
+		"""[summary]
+
+		Returns:
+			 [type]: [description]
+		"""
+
+		return [ 5 * self._t * ( self._a[ 0 ] * math.sqrt( x ) + self._a[ 1 ] * x +self._a[ 2 ] * math.pow( x, 2 ) + self._a[ 3 ] * math.pow( x, 3 ) + self._a[ 4 ] * math.pow( x, 4 ) ) for x in self._x_points ]
+
+
+# TESTING
+# TODO: Convert to unit tests?
 if __name__ == '__main__':
+	import matplotlib.pyplot
+
 	naca_4 = NACA_4( '0018' )
 	for point in naca_4.points:
 		matplotlib.pyplot.plot( point[ 0 ], point[ 1 ], 'b' )
-
-	matplotlib.pyplot.plot( naca_4.x_points, naca_4.mean_camber_line, 'r' )
 	matplotlib.pyplot.axis( 'equal' )
 	matplotlib.pyplot.grid( True )
 	matplotlib.pyplot.xlim( ( -0.05, 1.05 ) )
 	matplotlib.pyplot.show( )
 
 
-	naca_5 = NACA_5( 23112, cosine_spacing = False )
+	naca_5 = NACA_5( 23112 )
 	matplotlib.pyplot.plot( naca_5.points[ 0 ], naca_5.points[ 1 ], 'b' )
-	#matplotlib.pyplot.plot( naca_5.x_points, naca_5.mean_camber_line, 'r' )
-
 	matplotlib.pyplot.axis( 'equal' )
 	matplotlib.pyplot.grid( True )
 	matplotlib.pyplot.xlim( ( -0.05, 1.05 ) )
