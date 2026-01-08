@@ -9,7 +9,6 @@ https://en.wikipedia.org/wiki/NACA_airfoil#Equation_for_a_cambered_4-digit_NACA_
 """
 
 import abc
-from collections import namedtuple
 import math
 import numpy
 from typing import NamedTuple
@@ -30,13 +29,10 @@ class NACA_Base(abc.ABC):
 		half_cosine_spacing {bool} -- If true then half-cosine-spacing is used to calculate the distances between x axis 
 		points. This packs more points toward the front of the wing profile, to increase fidelity of the leading edge.
 	"""
-
 	def __init__(self, naca_number, num_points = 200, half_cosine_spacing = True):
 		self._naca_number : int = int(naca_number)
 		assert 0 <= self._naca_number <= 99999
-
 		self._x_points = self._half_cosine_spacing(0, 1, num_points) if half_cosine_spacing else numpy.linspace(0, 1, num_points)
-
 
 	@property
 	def naca_number(self):
@@ -69,12 +65,9 @@ class NACA_Base(abc.ABC):
 		Returns:
 			 numpy.ndarray -- Array of x-coordinates with half-cosine spacing.
 		"""
-
 		vals = [numpy.pi * 0.5 * x for x in numpy.linspace(start, stop, max_points)]
 		x_points = numpy.array([1 - x for x in numpy.cos(vals)])
-
 		return x_points
-
 
 	@abc.abstractmethod
 	def _calculate_points(self) -> tuple:
@@ -84,7 +77,6 @@ class NACA_Base(abc.ABC):
 		Returns:
 			 tuple -- A tuple containing (x_positions, y_positions) for the airfoil profile.
 		"""
-
 
 
 class NACA_4(NACA_Base):
@@ -99,22 +91,16 @@ class NACA_4(NACA_Base):
 		half_cosine_spacing {bool} -- If true then half-cosine-spacing is used to calculate the distances between x axis 
 		points. This packs more points toward the front of the wing profile, to increase fidelity of the leading edge.
 	"""
-
 	def __init__(self, naca_number, num_points = 200, half_cosine_spacing = True):
 		super().__init__(naca_number, num_points = num_points, half_cosine_spacing = half_cosine_spacing)
-
 		# Coeficient of lift
 		self._cl : float = 1.0
-
 		# Point of maximum camber
 		self._p : float = (self._naca_number % 1e3 - self._naca_number % 1e2) / 1e3
-
 		# Point of maximum thickness as a percentage along chord length
 		self._t : float = self._naca_number % 1e2 / 1e2
-
 		self._m : float = (self._naca_number - self._naca_number % 1e3) / 1e5
 		self._x_over_c = self._x_points / self._cl
-
 
 	def _mean_camber_line(self):
 		"""
@@ -126,14 +112,11 @@ class NACA_4(NACA_Base):
 		Returns:
 			 numpy.ndarray -- Y-coordinates of the mean camber line at each x_point.
 		"""
-
 		if self._p != 0:
 			return numpy.where((self._x_points >= 0) & (self._x_points <= self._cl * self._p),
 								self._m * (self._x_points / numpy.power(self._p, 2)) * (2.0 * self._p - self._x_over_c),
-								self._m * ((self._cl - self._x_points) / numpy.power(1 - self._p, 2)) * (1.0 + self._x_over_c - 2.0 * self._p))
-		
+								self._m * ((self._cl - self._x_points) / numpy.power(1 - self._p, 2)) * (1.0 + self._x_over_c - 2.0 * self._p))		
 		return numpy.where((self._x_points >= 0) & (self._x_points <= self._cl * self._p), 0, 0)
-
 
 	def _calculate_points(self) -> tuple:
 		"""
@@ -145,18 +128,13 @@ class NACA_4(NACA_Base):
 		Returns:
 			 tuple -- ((x_upper, x_lower), (y_upper, y_lower)) containing the coordinates.
 		"""
-
 		dyc_dx = self._dyc_over_dx()
 		th = numpy.arctan(dyc_dx)
-
 		yt = self._thickness()
 		yc = self._mean_camber_line()
-
 		x_pos = (self._x_points - yt * numpy.sin(th), yc + yt * numpy.cos(th))
 		y_pos = (self._x_points + yt * numpy.sin(th), yc - yt * numpy.cos(th))
-
 		return(x_pos, y_pos)
-
 
 	def _dyc_over_dx(self):
 		"""
@@ -168,13 +146,11 @@ class NACA_4(NACA_Base):
 		Returns:
 			 numpy.ndarray -- Slope of the mean camber line at each x_point.
 		"""
-
 		if self._p != 0:
 			return numpy.where((self._x_points >= 0) & (self._x_points <= self._cl * self._p),
 								2.0 * self._m / numpy.power(self._p, 2) * (self._p - self._x_over_c),
 								2.0 * self._m / numpy.power(1 - self._p, 2) * (self._p - self._x_over_c))
 		return numpy.where((self._x_points >= 0) & (self._x_points <= self._cl * self._p), 0, 0)
-
 
 	def _thickness(self):
 		"""
@@ -186,14 +162,12 @@ class NACA_4(NACA_Base):
 		Returns:
 			 numpy.ndarray -- Half-thickness values at each x_point.
 		"""
-
 		term1 = 0.2969 * numpy.sqrt(self._x_over_c)
 		term2 = -0.1260 * self._x_over_c
 		term3 = -0.3516 * numpy.power(self._x_over_c, 2)
 		term4 = 0.2843 * numpy.power(self._x_over_c, 3)
 		term5 = -0.1015 * numpy.power(self._x_over_c, 4)
 		return 5 * self._t * self._cl * (term1 + term2 + term3 + term4 + term5)
-
 
 
 class NACA_5(NACA_Base):
@@ -220,35 +194,26 @@ class NACA_5(NACA_Base):
 		half_cosine_spacing {bool} -- If true then half-cosine-spacing is used to calculate the distances between x axis 
 		points. This packs more points toward the front of the wing profile, to increase fidelity of the leading edge.
 	"""
-
 	def __init__(self, naca_number, num_points = 200, half_cosine_spacing = True):
 		super().__init__(naca_number, num_points = num_points, half_cosine_spacing = half_cosine_spacing)
-
 		self._mean_line_map = {0.05 : Mean_Line_Data(m = 0.0580, k1 = 361.400),
 							   0.10 : Mean_Line_Data(m = 0.1260, k1 = 51.640),
 							   0.155 : Mean_Line_Data(m = 0.2025, k1 = 15.957),
 							   0.20 : Mean_Line_Data(m = 0.2900, k1 = 6.643),
 							   0.25 : Mean_Line_Data(m = 0.3910, k1 = 3.230),}
-
 		self._a = (0.2969, -0.1260, -0.3516, 0.2843, -0.1036)
-
 		# LPSTT
 		# NACA 23112 profile describes an airfoil with design lift coefficient of 0.3 (0.15 * 2), the point of maximum camber located at 15%
 		# chord (5 * 3) reflex camber (1), and maximum thickness of 12% of chord length (12).
-
 		# Coeficient of lift
 		self._cl : float = int(str(naca_number)[0]) * 3.0 / 2.0 / 10.0
-
 		# Point of maximum camber
 		self._p : float = float('%.3f' % (int(str(naca_number) [1 : 3]) / 2.0 / 100.0))
-
 		# Point of maximum thickness as percentage along chord length
 		self._t : float = int(str(naca_number) [3 : 5]) / 100.0
-
 		mean_line_data = self._mean_line_map.get(self._p)
 		assert mean_line_data is not None, f"No mean line data for p={self._p}"
 		self._m, self._k1 = mean_line_data
-
 
 	def _mean_camber_line(self):
 		"""Calculate the mean camber line y-coordinates for a NACA 5-series airfoil.
@@ -258,9 +223,7 @@ class NACA_5(NACA_Base):
 		Returns:
 			 numpy.ndarray -- Y-coordinates of the mean camber line.
 		"""
-
 		return numpy.where((self._x_points <= self._p) & (self._x_points > self._p), 0, 0)
-
 
 	def _calculate_points(self) -> tuple:
 		"""Calculate the upper and lower surface coordinates for a NACA 5-series airfoil.
@@ -271,41 +234,29 @@ class NACA_5(NACA_Base):
 		Returns:
 			 tuple -- (x_positions, y_positions) lists containing the complete airfoil profile.
 		"""
-
 		yt = self._thickness()
-
 		xc_1 = [x for x in self._x_points if x <= self._p]
 		xc_2 = [x for x in self._x_points if x > self._p]
 		xc = xc_1 + xc_2
-
 		if self._p == 0:
 			x_upper = self._x_points
 			y_upper = yt
-
 			x_lower = self._x_points
 			y_lower = list(map(lambda x: x * -1, yt))
-
 			zc = [0] * len(xc)
 		else:
 			yc_1 = [self._k1 / 6.0 * (math.pow(x, 3) - 3 * self._m * math.pow(x, 2) + math.pow(self._m, 2) * (3 - self._m) * x) for x in xc_1]
 			yc_2 = [self._k1 / 6.0 * math.pow(self._m, 3) * (1 - x) for x in xc_2]
 			zc  = [self._cl / 0.3 * x for x in yc_1 + yc_2]
-
 			dyc_dx = self._dyc_over_dx(xc_1, xc_2)
 			th = [numpy.arctan(x) for x in dyc_dx]
-
 			x_upper = [x - y * numpy.sin(z) for x, y, z in zip(self._x_points, yt, th)]
 			y_upper = [x + y * numpy.cos(z) for x, y, z in zip(zc, yt, th)]
-
 			x_lower = [x + y * numpy.sin(z) for x, y, z in zip(self._x_points, yt, th)]
 			y_lower = [x - y * numpy.cos(z) for x, y, z in zip(zc, yt, th)]
-
-
 		x_pos = x_upper[::-1] + x_lower[1:]
 		y_pos = y_upper[::-1] + y_lower[1:]
-
 		return x_pos, y_pos
-
 
 	def _dyc_over_dx(self, xc_1, xc_2):
 		"""Calculate the derivative of the mean camber line for a NACA 5-series airfoil.
@@ -320,13 +271,10 @@ class NACA_5(NACA_Base):
 		Returns:
 			 list -- Slope values of the mean camber line for all x positions.
 		"""
-
 		dyc_dx_1 = [self._cl / 0.3 * (1.0 / 6.0) * self._k1 * (3 * math.pow(x, 2) - 6 *
 						 self._m * x + math.pow(self._m, 2) * (3 - self._m)) for x in xc_1]
 		dyc_dx_2 = [self._cl / 0.3 * (1.0 / 6.0) * self._k1 * math.pow(self._m, 3)] * len(xc_2)
-
 		return dyc_dx_1 + dyc_dx_2
-
 
 	def _thickness(self):
 		"""Calculate the thickness distribution for a NACA 5-series airfoil.
@@ -337,5 +285,4 @@ class NACA_5(NACA_Base):
 		Returns:
 			 list -- Half-thickness values at each x_point.
 		"""
-
 		return [5 * self._t * (self._a[0] * math.sqrt(x) + self._a[1] * x +self._a[2] * math.pow(x, 2) + self._a[3] * math.pow(x, 3) + self._a[4] * math.pow(x, 4)) for x in self._x_points]

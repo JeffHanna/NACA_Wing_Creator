@@ -7,7 +7,7 @@ import numpy
 from naca import NACA_4, NACA_5
 
 
-class TestNACA4(unittest.TestCase):
+class Test_NACA_4(unittest.TestCase):
 	"""Test cases for NACA 4-series airfoil calculations."""
 
 	def setUp(self):
@@ -84,7 +84,7 @@ class TestNACA4(unittest.TestCase):
 		self.assertAlmostEqual(max_thickness, 0.18, delta=0.01)
 
 
-class TestNACA5(unittest.TestCase):
+class Test_NACA_5(unittest.TestCase):
 	"""Test cases for NACA 5-series airfoil calculations."""
 
 	def setUp(self):
