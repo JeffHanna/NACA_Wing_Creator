@@ -284,8 +284,8 @@ class NACA_5(NACA_Base):
 		xc_1_mask = self._x_points <= self._p
 		
 		dyc_dx_1 = self._cl / 0.3 * (1.0 / 6.0) * self._k1 * (3 * numpy.power(self._x_points, 2) - 
-																6 * self._m * self._x_points + 
-																numpy.power(self._m, 2) * (3 - self._m))
+															  6 * self._m * self._x_points + 
+															  numpy.power(self._m, 2) * (3 - self._m))
 		dyc_dx_2 = self._cl / 0.3 * (1.0 / 6.0) * self._k1 * numpy.power(self._m, 3) * numpy.ones_like(self._x_points)
 		
 		return numpy.where(xc_1_mask, dyc_dx_1, dyc_dx_2)
