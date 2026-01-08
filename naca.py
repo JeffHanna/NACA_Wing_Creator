@@ -202,11 +202,15 @@ class NACA_5(NACA_Base):
 	"""
 	def __init__(self, naca_number, num_points = 200, half_cosine_spacing = True):
 		super().__init__(naca_number, num_points = num_points, half_cosine_spacing = half_cosine_spacing)
-		self._mean_line_map = {0.05 : Mean_Line_Data(m = 0.0580, k1 = 361.400),
-							   0.10 : Mean_Line_Data(m = 0.1260, k1 = 51.640),
-							   0.155 : Mean_Line_Data(m = 0.2025, k1 = 15.957),
-							   0.20 : Mean_Line_Data(m = 0.2900, k1 = 6.643),
-							   0.25 : Mean_Line_Data(m = 0.3910, k1 = 3.230),}
+		self._mean_line_map = {0.05 : Mean_Line_Data(m = 0.0580, k1 = 361.400),  # 210
+							   0.10 : Mean_Line_Data(m = 0.1260, k1 = 51.640),  # 220
+							   0.16 : Mean_Line_Data(m = 0.1300, k1 = 51.990),  # 221
+							   0.15 : Mean_Line_Data(m = 0.2025, k1 = 15.957),  # 230
+							   0.17 : Mean_Line_Data(m = 0.2170, k1 = 15.793),  # 231
+							   0.20 : Mean_Line_Data(m = 0.2900, k1 = 6.643),  # 240
+							   # x.xx : Mean_Line_Data(m = 0.3180, k1 = 6.520),  # 241
+							   0.25 : Mean_Line_Data(m = 0.3910, k1 = 3.230)}  # 250
+							   # x.xx : Mean_Line_Data(m = 0.4410, k1 = 3.191)}  # 251
 		self._a = (0.2969, -0.1260, -0.3516, 0.2843, -0.1036)
 		# LPSTT
 		# NACA 23112 profile describes an airfoil with design lift coefficient of 0.3 (0.15 * 2), the point of maximum camber located at 15%
