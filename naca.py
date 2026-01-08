@@ -339,25 +339,3 @@ class NACA_5(NACA_Base):
 		"""
 
 		return [5 * self._t * (self._a[0] * math.sqrt(x) + self._a[1] * x +self._a[2] * math.pow(x, 2) + self._a[3] * math.pow(x, 3) + self._a[4] * math.pow(x, 4)) for x in self._x_points]
-
-
-# TESTING
-# TODO: Convert to unit tests?
-if __name__ == '__main__':
-	import matplotlib.pyplot
-
-	naca_4 = NACA_4('0018')
-	for point in naca_4.points:
-		matplotlib.pyplot.plot(point[0], point[1], 'b')
-	matplotlib.pyplot.axis('equal')
-	matplotlib.pyplot.grid(True)
-	matplotlib.pyplot.xlim((-0.05, 1.05))
-	matplotlib.pyplot.show()
-
-
-	naca_5 = NACA_5(23112)
-	matplotlib.pyplot.plot(naca_5.points[0], naca_5.points[1], 'b')
-	matplotlib.pyplot.axis('equal')
-	matplotlib.pyplot.grid(True)
-	matplotlib.pyplot.xlim((-0.05, 1.05))
-	matplotlib.pyplot.show()
