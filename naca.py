@@ -1,5 +1,11 @@
 """
-[summary]
+NACA airfoil profile generator.
+
+This module provides classes for calculating NACA 4-series and 5-series airfoil coordinates. 
+NACA (National Advisory Committee for Aeronautics) airfoils are standardized wing cross-sections used in 
+aerospace engineering.
+
+https://en.wikipedia.org/wiki/NACA_airfoil#Equation_for_a_cambered_4-digit_NACA_airfoil
 """
 
 import abc
@@ -14,15 +20,15 @@ Mean_Line_Data = NamedTuple('Mean_Line_Data', [('m', float), ('k1', float)])
 
 class NACA_Base(abc.ABC):
 	"""
-	[summary]
+	Base class for NACA airfoil profile calculations.
 
 	Arguments:
 		naca_number {str} -- A string of digits specifing the NACA number of the airfoil cross section to caclulate.
 
 	Keyword Arguments:
 		num_points {int} -- The number of points to calculate on each half (top and bottom) of the wing profile.
-		half_cosine_spacing {bool} -- If true then half-cosine-spacing is used to calculate the distances between x axis points. This packs more points
-												toward the front of the wing profile, to increase fidelity of the leading edge.
+		half_cosine_spacing {bool} -- If true then half-cosine-spacing is used to calculate the distances between x axis 
+		points. This packs more points toward the front of the wing profile, to increase fidelity of the leading edge.
 	"""
 
 	def __init__(self, naca_number, num_points = 200, half_cosine_spacing = True):
@@ -50,14 +56,18 @@ class NACA_Base(abc.ABC):
 	@staticmethod
 	def _half_cosine_spacing(start, stop, max_points):
 		"""
-		[summary]
+		Generate x-axis points using half-cosine spacing distribution.
+
+		This spacing method concentrates more points near the leading edge (x=0) of the airfoil,
+		providing higher fidelity where the curvature is greatest.
 
 		Arguments:
-			 stop {[type]} -- [description]
-			 max_points {[type]} -- [description]
+			 start {float} -- Starting value (typically 0).
+			 stop {float} -- Ending value (typically 1).
+			 max_points {int} -- Number of points to generate.
 
 		Returns:
-			 [type] -- [description]
+			 numpy.ndarray -- Array of x-coordinates with half-cosine spacing.
 		"""
 
 		vals = [numpy.pi * 0.5 * x for x in numpy.linspace(start, stop, max_points)]
@@ -67,16 +77,18 @@ class NACA_Base(abc.ABC):
 
 
 	@abc.abstractmethod
-	def _calculate_points(self):
+	def _calculate_points(self) -> tuple:
 		"""
-		[summary]
+		Calculate the upper and lower surface coordinates of the airfoil.
+
+		Returns:
+			 tuple -- A tuple containing (x_positions, y_positions) for the airfoil profile.
 		"""
 
 
 
 class NACA_4(NACA_Base):
-	"""
-	https://en.wikipedia.org/wiki/NACA_airfoil#Equation_for_a_cambered_4-digit_NACA_airfoil (has 4, 5, 6, 7, and 8 series information.)
+	"""	
 	http://airfoiltools.com/airfoil/naca4digit
 
 	Arguments:
@@ -84,8 +96,8 @@ class NACA_4(NACA_Base):
 
 	Keyword Arguments:
 		num_points {int} -- The number of points to calculate on each half (top and bottom) of the wing profile.
-		half_cosine_spacing {bool} -- If true then half-cosine-spacing is used to calculate the distances between x axis points. This packs more points
-												toward the front of the wing profile, to increase fidelity of the leading edge.
+		half_cosine_spacing {bool} -- If true then half-cosine-spacing is used to calculate the distances between x axis 
+		points. This packs more points toward the front of the wing profile, to increase fidelity of the leading edge.
 	"""
 
 	def __init__(self, naca_number, num_points = 200, half_cosine_spacing = True):
@@ -101,15 +113,18 @@ class NACA_4(NACA_Base):
 		self._t : float = self._naca_number % 1e2 / 1e2
 
 		self._m : float = (self._naca_number - self._naca_number % 1e3) / 1e5
-		self._x_over_c : float = self._x_points / self._cl
+		self._x_over_c = self._x_points / self._cl
 
 
 	def _mean_camber_line(self):
 		"""
-		[summary]
+		Calculate the mean camber line y-coordinates for a NACA 4-series airfoil.
+
+		The mean camber line is the curve halfway between the upper and lower surfaces.
+		For symmetric airfoils (p=0), this returns zeros.
 
 		Returns:
-			 [type] -- [description]
+			 numpy.ndarray -- Y-coordinates of the mean camber line at each x_point.
 		"""
 
 		if self._p != 0:
@@ -120,12 +135,15 @@ class NACA_4(NACA_Base):
 		return numpy.where((self._x_points >= 0) & (self._x_points <= self._cl * self._p), 0, 0)
 
 
-	def _calculate_points(self):
+	def _calculate_points(self) -> tuple:
 		"""
-		[summary]
+		Calculate the upper and lower surface coordinates for a NACA 4-series airfoil.
+
+		Combines the mean camber line, thickness distribution, and camber angle to compute
+		the final airfoil surface coordinates.
 
 		Returns:
-			 [type] -- [description]
+			 tuple -- ((x_upper, x_lower), (y_upper, y_lower)) containing the coordinates.
 		"""
 
 		dyc_dx = self._dyc_over_dx()
@@ -142,10 +160,13 @@ class NACA_4(NACA_Base):
 
 	def _dyc_over_dx(self):
 		"""
-		[summary]
+		Calculate the derivative of the mean camber line (dyc/dx) for a NACA 4-series airfoil.
+
+		This derivative is used to determine the angle of the camber line, which is needed
+		to properly offset the thickness distribution perpendicular to the camber line.
 
 		Returns:
-			 [type] -- [description]
+			 numpy.ndarray -- Slope of the mean camber line at each x_point.
 		"""
 
 		if self._p != 0:
@@ -157,10 +178,13 @@ class NACA_4(NACA_Base):
 
 	def _thickness(self):
 		"""
-		[summary]
+		Calculate the thickness distribution for a NACA 4-series airfoil.
+
+		Uses the standard NACA 4-digit thickness formula with coefficients that define
+		the airfoil shape. The thickness is half the distance between upper and lower surfaces.
 
 		Returns:
-			 [type] -- [description]
+			 numpy.ndarray -- Half-thickness values at each x_point.
 		"""
 
 		term1 = 0.2969 * numpy.sqrt(self._x_over_c)
@@ -177,13 +201,13 @@ class NACA_5(NACA_Base):
 	(From Wikipedia)
 	The NACA five-digit series describes more complex airfoil shapes. Its format is: LPSTT, where:
 
-	L: a single digit representing the theoretical optimum lift coefficient at ideal angle-of-attack CLI = 0.15*L (this is not the same as
-	the lift coefficient, CL)
+	L: a single digit representing the theoretical optimum lift coefficient at ideal angle-of-attack CLI = 0.15*L 
+	(this is not the same as the lift coefficient, CL)
 	P: a single digit for the x-coordinate of the point of maximum camber (max camber at x = 0.05*P)
 	S: a single digit indicating whether the camber is simple (S=0) or reflex (S=1)
 	TT: the maximum thickness in percent of chord, as in a four-digit NACA airfoil code
-	For example, the NACA 23112 profile describes an airfoil with design lift coefficient of 0.3 (0.15*2), the point of maximum camber
-	located at 15% chord (5*3), reflex camber (1), and maximum thickness of 12% of chord length (12).
+	For example, the NACA 23112 profile describes an airfoil with design lift coefficient of 0.3 (0.15*2), the point of 
+	maximum camber located at 15% chord (5*3), reflex camber (1), and maximum thickness of 12% of chord length (12).
 
 	https://en.wikipedia.org/wiki/NACA_airfoil#Five-digit_series
 	http://airfoiltools.com/airfoil/naca5digit
@@ -193,8 +217,8 @@ class NACA_5(NACA_Base):
 
 	Keyword Arguments:
 		num_points {int} -- The number of points to calculate on each half (top and bottom) of the wing profile.
-		half_cosine_spacing {bool} -- If true then half-cosine-spacing is used to calculate the distances between x axis points. This packs more points
-												toward the front of the wing profile, to increase fidelity of the leading edge.
+		half_cosine_spacing {bool} -- If true then half-cosine-spacing is used to calculate the distances between x axis 
+		points. This packs more points toward the front of the wing profile, to increase fidelity of the leading edge.
 	"""
 
 	def __init__(self, naca_number, num_points = 200, half_cosine_spacing = True):
@@ -213,32 +237,39 @@ class NACA_5(NACA_Base):
 		# chord (5 * 3) reflex camber (1), and maximum thickness of 12% of chord length (12).
 
 		# Coeficient of lift
-		self._cl : int = int(str(naca_number)[0]) * 3.0 / 2.0 / 10.0
+		self._cl : float = int(str(naca_number)[0]) * 3.0 / 2.0 / 10.0
 
 		# Point of maximum camber
 		self._p : float = float('%.3f' % (int(str(naca_number) [1 : 3]) / 2.0 / 100.0))
 
 		# Point of maximum thickness as percentage along chord length
-		self._t : int = int(str(naca_number) [3 : 5]) / 100.0
+		self._t : float = int(str(naca_number) [3 : 5]) / 100.0
 
-		self._m, self._k1 = self._mean_line_map.get(self._p)
+		mean_line_data = self._mean_line_map.get(self._p)
+		assert mean_line_data is not None, f"No mean line data for p={self._p}"
+		self._m, self._k1 = mean_line_data
 
 
 	def _mean_camber_line(self):
-		"""[summary]
+		"""Calculate the mean camber line y-coordinates for a NACA 5-series airfoil.
+
+		Currently returns zeros - this is a placeholder implementation.
 
 		Returns:
-			 [type]: [description]
+			 numpy.ndarray -- Y-coordinates of the mean camber line.
 		"""
 
-		return numpy.where((self._x_points <= self.p) & (self._x_points > self._p),)
+		return numpy.where((self._x_points <= self._p) & (self._x_points > self._p), 0, 0)
 
 
-	def _calculate_points(self):
-		"""[summary]
+	def _calculate_points(self) -> tuple:
+		"""Calculate the upper and lower surface coordinates for a NACA 5-series airfoil.
+
+		For 5-series airfoils, the mean camber line is defined piecewise before and after
+		the maximum camber position, using tabulated coefficients for different camber locations.
 
 		Returns:
-			 [type]: [description]
+			 tuple -- (x_positions, y_positions) lists containing the complete airfoil profile.
 		"""
 
 		yt = self._thickness()
@@ -252,7 +283,7 @@ class NACA_5(NACA_Base):
 			y_upper = yt
 
 			x_lower = self._x_points
-			y_lower = map(lambda x: x * -1, yt)
+			y_lower = list(map(lambda x: x * -1, yt))
 
 			zc = [0] * len(xc)
 		else:
@@ -277,14 +308,17 @@ class NACA_5(NACA_Base):
 
 
 	def _dyc_over_dx(self, xc_1, xc_2):
-		"""[summary]
+		"""Calculate the derivative of the mean camber line for a NACA 5-series airfoil.
+
+		The derivative is calculated separately for points before and after the maximum
+		camber position using different formulas for each region.
 
 		Args:
-			 xc_1 ([type]): [description]
-			 xc_2 ([type]): [description]
+			 xc_1 (list): X-coordinates before or at the maximum camber position.
+			 xc_2 (list): X-coordinates after the maximum camber position.
 
 		Returns:
-			 [type]: [description]
+			 list -- Slope values of the mean camber line for all x positions.
 		"""
 
 		dyc_dx_1 = [self._cl / 0.3 * (1.0 / 6.0) * self._k1 * (3 * math.pow(x, 2) - 6 *
@@ -295,10 +329,13 @@ class NACA_5(NACA_Base):
 
 
 	def _thickness(self):
-		"""[summary]
+		"""Calculate the thickness distribution for a NACA 5-series airfoil.
+
+		Uses the standard NACA 5-digit thickness formula with predefined coefficients.
+		The formula is similar to the 4-series but with a slightly different trailing edge coefficient.
 
 		Returns:
-			 [type]: [description]
+			 list -- Half-thickness values at each x_point.
 		"""
 
 		return [5 * self._t * (self._a[0] * math.sqrt(x) + self._a[1] * x +self._a[2] * math.pow(x, 2) + self._a[3] * math.pow(x, 3) + self._a[4] * math.pow(x, 4)) for x in self._x_points]
