@@ -9,7 +9,6 @@ https://en.wikipedia.org/wiki/NACA_airfoil#Equation_for_a_cambered_4-digit_NACA_
 """
 
 import abc
-import math
 import numpy
 from typing import NamedTuple
 
@@ -201,28 +200,31 @@ class NACA_5(NACA_Base):
 		points. This packs more points toward the front of the wing profile, to increase fidelity of the leading edge.
 	"""
 	def __init__(self, naca_number, num_points = 200, half_cosine_spacing = True):
-		super().__init__(naca_number, num_points = num_points, half_cosine_spacing = half_cosine_spacing)
-		self._mean_line_map = {0.05 : Mean_Line_Data(m = 0.0580, k1 = 361.400),  # 210
-							   0.10 : Mean_Line_Data(m = 0.1260, k1 = 51.640),  # 220
-							   0.16 : Mean_Line_Data(m = 0.1300, k1 = 51.990),  # 221
-							   0.15 : Mean_Line_Data(m = 0.2025, k1 = 15.957),  # 230
-							   0.17 : Mean_Line_Data(m = 0.2170, k1 = 15.793),  # 231
-							   0.20 : Mean_Line_Data(m = 0.2900, k1 = 6.643),  # 240
-							   # x.xx : Mean_Line_Data(m = 0.3180, k1 = 6.520),  # 241
-							   0.25 : Mean_Line_Data(m = 0.3910, k1 = 3.230)}  # 250
-							   # x.xx : Mean_Line_Data(m = 0.4410, k1 = 3.191)}  # 251
+		super().__init__(naca_number, num_points = num_points, half_cosine_spacing = half_cosine_spacing)		
+		identifier = int(self._naca_number / 100)
+
+		mean_line_map = {
+			210 : Mean_Line_Data(m = 0.0580, k1 = 361.400),
+			220 : Mean_Line_Data(m = 0.1260, k1 = 51.640),
+			221 : Mean_Line_Data(m = 0.1300, k1 = 51.990),
+			230 : Mean_Line_Data(m = 0.2025, k1 = 15.957),
+			231 : Mean_Line_Data(m = 0.2170, k1 = 15.793),
+			240 : Mean_Line_Data(m = 0.2900, k1 = 6.643),
+			241 : Mean_Line_Data(m = 0.3180, k1 = 6.520),
+			250 : Mean_Line_Data(m = 0.3910, k1 = 3.230),
+			251 : Mean_Line_Data(m = 0.4410, k1 = 3.191)}
+		mean_line_data = mean_line_map.get(identifier)
+		assert mean_line_data is not None, f"No mean line data for {naca_number}"
+		
+		# Thickness coefficients
 		self._a = (0.2969, -0.1260, -0.3516, 0.2843, -0.1036)
-		# LPSTT
-		# NACA 23112 profile describes an airfoil with design lift coefficient of 0.3 (0.15 * 2), the point of maximum camber located at 15%
-		# chord (5 * 3) reflex camber (1), and maximum thickness of 12% of chord length (12).
 		# Coeficient of lift
 		self._cl : float = int(str(naca_number)[0]) * 3.0 / 2.0 / 10.0
 		# Point of maximum camber
 		self._p : float = float('%.3f' % (int(str(naca_number) [1 : 3]) / 2.0 / 100.0))
 		# Point of maximum thickness as percentage along chord length
 		self._t : float = int(str(naca_number) [3 : 5]) / 100.0
-		mean_line_data = self._mean_line_map.get(self._p)
-		assert mean_line_data is not None, f"No mean line data for p={self._p}"
+		# mean_line_data = self._mean_line_map.get(self._p)
 		self._m, self._k1 = mean_line_data
 
 	def _mean_camber_line(self):
@@ -247,7 +249,6 @@ class NACA_5(NACA_Base):
 		"""
 		yt = self._thickness()
 		xc_1_mask = self._x_points <= self._p
-		xc_2_mask = self._x_points > self._p
 		
 		if self._p == 0:
 			x_upper = self._x_points
@@ -257,8 +258,8 @@ class NACA_5(NACA_Base):
 			zc = numpy.zeros_like(self._x_points)
 		else:
 			# Calculate yc for both regions
-			yc_1 = self._k1 / 6.0 * (numpy.power(self._x_points, 3) - 3 * self._m * numpy.power(self._x_points, 2) + 
-									  numpy.power(self._m, 2) * (3 - self._m) * self._x_points)
+			yc_1 = self._k1 / 6.0 * (numpy.power(self._x_points, 3) - 3 * self._m * numpy.power(self._x_points, 2) +
+									 numpy.power(self._m, 2) * (3 - self._m) * self._x_points)
 			yc_2 = self._k1 / 6.0 * numpy.power(self._m, 3) * (1 - self._x_points)
 			# Use the appropriate formula based on position
 			yc = numpy.where(xc_1_mask, yc_1, yc_2)
@@ -310,3 +311,24 @@ class NACA_5(NACA_Base):
 		term5 = self._a[4] * numpy.power(self._x_points, 4)
 		return 5 * self._t * (term1 + term2 + term3 + term4 + term5)
 	
+
+if __name__ == "__main__":
+	# Example usage and plotting
+	import matplotlib.pyplot as plt
+
+	naca4_airfoil = NACA_4("2412", num_points=200)
+	x4, y4 = naca4_airfoil.points
+
+	naca5_airfoil = NACA_5("23012", num_points=200)
+	x5, y5 = naca5_airfoil.points
+
+	plt.figure(figsize=(10, 5))
+	plt.plot(x4, y4, label="NACA 0014")
+	plt.plot(x5, y5, label="NACA 23112")
+	plt.title("NACA Airfoil Profiles")
+	plt.xlabel("x/c")
+	plt.ylabel("y/c")
+	plt.axis("equal")
+	plt.grid(True)
+	plt.legend()
+	plt.show()
