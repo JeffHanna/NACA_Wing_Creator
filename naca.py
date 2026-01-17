@@ -316,15 +316,15 @@ if __name__ == "__main__":
 	# Example usage and plotting
 	import matplotlib.pyplot as plt
 
-	naca4_airfoil = NACA_4("2412", num_points=200)
+	naca4_airfoil = NACA_4("0018", num_points=200)
 	x4, y4 = naca4_airfoil.points
 
-	naca5_airfoil = NACA_5("23012", num_points=200)
+	naca5_airfoil = NACA_5("23016", num_points=200)
 	x5, y5 = naca5_airfoil.points
 
 	plt.figure(figsize=(10, 5))
-	plt.plot(x4, y4, label="NACA 0014")
-	plt.plot(x5, y5, label="NACA 23112")
+	plt.plot(x4, y4, label="NACA 0018 (B-17G root)")
+	plt.plot(x5, y5, label="NACA 23016 (P-38J root)")
 	plt.title("NACA Airfoil Profiles")
 	plt.xlabel("x/c")
 	plt.ylabel("y/c")
