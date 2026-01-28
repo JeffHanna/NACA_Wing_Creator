@@ -6,26 +6,26 @@
     "configurations": [
         {
             "name": "Python: Workspace Startup File",
-            "type": "python",
+            "type": "debugpy",
             "request": "launch",
-            "program": "D:/Repos/NACA_Wing_Creator/naca.py"
+            "program": "${workspaceFolder}/example_plot.py"
         },
         {
             "name": "Python: Current File",
-            "type": "python",
+            "type": "debugpy",
             "request": "launch",
             "program": "${file}"
         },
         {
             "name": "Python: Terminal (integrated)",
-            "type": "python",
+            "type": "debugpy",
             "request": "launch",
             "program": "${file}",
             "console": "integratedTerminal"
         },
         {
             "name": "Python: Terminal (external)",
-            "type": "python",
+            "type": "debugpy",
             "request": "launch",
             "program": "${file}",
             "console": "externalTerminal"
