@@ -8,7 +8,7 @@
             "name": "Python: Workspace Startup File",
             "type": "debugpy",
             "request": "launch",
-            "program": "${workspaceFolder}/example_plot.py"
+            "program": "${workspaceFolder}/source/example_plot.py"
         },
         {
             "name": "Python: Current File",
