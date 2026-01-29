@@ -4,7 +4,7 @@ Unit tests for NACA airfoil profile generators.
 
 import unittest
 import numpy
-from source.naca import NACA_4, NACA_5
+from naca import NACA_4, NACA_5
 
 
 class Test_NACA_4(unittest.TestCase):

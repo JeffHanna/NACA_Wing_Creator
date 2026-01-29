@@ -8,7 +8,7 @@ Both NACA_4 and NACA_5 now return points ready to plot:
 The outline goes: trailing edge (upper) -> leading edge -> trailing edge (lower)
 """
 import matplotlib.pyplot as plt
-from source.naca import NACA_4, NACA_5
+from naca import NACA_4, NACA_5
 
 
 def _plot_airfoils(root: NACA_4 | NACA_5, tip: NACA_4 | NACA_5, root_label: str, tip_label: str):
