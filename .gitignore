@@ -5,3 +5,6 @@
 .vscode/tags
 __pycache__/
 env/
+*.egg-info/
+dist/
+build/

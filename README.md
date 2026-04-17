@@ -13,17 +13,24 @@ A Python library for generating NACA airfoil coordinates with support for 4-digi
 
 ## Installation
 
-Clone the repository:
+Install from GitHub:
+
+```bash
+pip install git+https://github.com/JeffHanna/NACA_Wing_Creator.git
+```
+
+Or clone and install locally:
 
 ```bash
 git clone https://github.com/JeffHanna/NACA_Wing_Creator.git
 cd NACA_Wing_Creator
+pip install .
 ```
 
-Install dependencies:
+For development (editable install):
 
 ```bash
-pip install numpy matplotlib
+pip install -e .
 ```
 
 ## Quick Start
