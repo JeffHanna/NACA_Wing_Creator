@@ -220,12 +220,19 @@ class NACA_5(NACA_Base):
 		self._a = (0.2969, -0.1260, -0.3516, 0.2843, -0.1036)
 		# Coeficient of lift
 		self._cl : float = int(str(naca_number)[0]) * 3.0 / 2.0 / 10.0
-		# Point of maximum camber
-		self._p : float = float('%.3f' % (int(str(naca_number) [1 : 3]) / 2.0 / 100.0))
+		# S digit: 0 = simple camber, 1 = reflex camber
+		self._is_reflex : bool = int(str(naca_number)[2]) == 1
+		# Point of maximum camber (P digit only, not P+S)
+		self._p : float = int(str(naca_number)[1]) * 0.05
 		# Point of maximum thickness as percentage along chord length
 		self._t : float = int(str(naca_number) [3 : 5]) / 100.0
-		# mean_line_data = self._mean_line_map.get(self._p)
 		self._m, self._k1 = mean_line_data
+		# For reflex camber, compute k2 from the zero-moment constraint
+		if self._is_reflex:
+			r = self._m
+			self._k2 = (3.0 * (r - self._p) ** 2 - r ** 3) / (1.0 - r) ** 3
+		else:
+			self._k2 = 0.0
 
 	def _mean_camber_line(self):
 		"""Calculate the mean camber line y-coordinates for a NACA 5-series airfoil.
@@ -242,13 +249,15 @@ class NACA_5(NACA_Base):
 
 		For 5-series airfoils, the mean camber line is defined piecewise before and after
 		the maximum camber position, using tabulated coefficients for different camber locations.
+		Reflex camber (S=1) uses a different formula with a k2 parameter that produces zero
+		pitching moment about the aerodynamic centre.
 
 		Returns:
 			 tuple -- (x_positions, y_positions) containing the complete airfoil outline.
 			 The outline goes from trailing edge (upper) -> leading edge -> trailing edge (lower).
 		"""
 		yt = self._thickness()
-		xc_1_mask = self._x_points <= self._p
+		xc_1_mask = self._x_points <= self._m
 		
 		if self._p == 0:
 			x_upper = self._x_points
@@ -257,10 +266,31 @@ class NACA_5(NACA_Base):
 			y_lower = -yt
 			zc = numpy.zeros_like(self._x_points)
 		else:
-			# Calculate yc for both regions
-			yc_1 = self._k1 / 6.0 * (numpy.power(self._x_points, 3) - 3 * self._m * numpy.power(self._x_points, 2) +
-									 numpy.power(self._m, 2) * (3 - self._m) * self._x_points)
-			yc_2 = self._k1 / 6.0 * numpy.power(self._m, 3) * (1 - self._x_points)
+			x = self._x_points
+			m = self._m
+			k1 = self._k1
+
+			if self._is_reflex:
+				# Reflex camber formula (Abbott & von Doenhoff, NACA Report 460)
+				k2 = self._k2
+				yc_1 = k1 / 6.0 * (
+					numpy.power(x - m, 3)
+					- k2 * (1.0 - m) ** 3 * x
+					- numpy.power(m, 3) * x
+					+ numpy.power(m, 3))
+				yc_2 = k1 / 6.0 * (
+					k2 * numpy.power(x - m, 3)
+					- k2 * (1.0 - m) ** 3 * x
+					- numpy.power(m, 3) * x
+					+ numpy.power(m, 3))
+			else:
+				# Standard (non-reflex) camber formula
+				yc_1 = k1 / 6.0 * (
+					numpy.power(x, 3)
+					- 3 * m * numpy.power(x, 2)
+					+ numpy.power(m, 2) * (3 - m) * x)
+				yc_2 = k1 / 6.0 * numpy.power(m, 3) * (1 - x)
+
 			# Use the appropriate formula based on position
 			yc = numpy.where(xc_1_mask, yc_1, yc_2)
 			zc = self._cl / 0.3 * yc
@@ -281,17 +311,34 @@ class NACA_5(NACA_Base):
 		"""Calculate the derivative of the mean camber line for a NACA 5-series airfoil.
 
 		The derivative is calculated separately for points before and after the maximum
-		camber position using different formulas for each region.
+		camber position using different formulas for each region. Reflex camber uses the
+		derivative of the reflex formula with k2.
 
 		Returns:
 			 numpy.ndarray -- Slope values of the mean camber line for all x positions.
 		"""
-		xc_1_mask = self._x_points <= self._p
-		
-		dyc_dx_1 = self._cl / 0.3 * (1.0 / 6.0) * self._k1 * (3 * numpy.power(self._x_points, 2) - 
-															  6 * self._m * self._x_points + 
-															  numpy.power(self._m, 2) * (3 - self._m))
-		dyc_dx_2 = self._cl / 0.3 * (1.0 / 6.0) * self._k1 * numpy.power(self._m, 3) * numpy.ones_like(self._x_points)
+		xc_1_mask = self._x_points <= self._m
+		x = self._x_points
+		m = self._m
+		k1 = self._k1
+		scale = self._cl / 0.3
+
+		if self._is_reflex:
+			k2 = self._k2
+			dyc_dx_1 = scale * k1 / 6.0 * (
+				3.0 * numpy.power(x - m, 2)
+				- k2 * (1.0 - m) ** 3
+				- numpy.power(m, 3))
+			dyc_dx_2 = scale * k1 / 6.0 * (
+				3.0 * k2 * numpy.power(x - m, 2)
+				- k2 * (1.0 - m) ** 3
+				- numpy.power(m, 3))
+		else:
+			dyc_dx_1 = scale * (1.0 / 6.0) * k1 * (
+				3 * numpy.power(x, 2)
+				- 6 * m * x
+				+ numpy.power(m, 2) * (3 - m))
+			dyc_dx_2 = scale * (1.0 / 6.0) * k1 * numpy.power(m, 3) * numpy.ones_like(x)
 		
 		return numpy.where(xc_1_mask, dyc_dx_1, dyc_dx_2)
 
